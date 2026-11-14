@@ -3,12 +3,12 @@ const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* Splash landing: shown once per session; the Enter tap also unlocks the music */
+/* Splash landing */
 (function splash() {
   const el = $('#splash'), btn = $('#splash-enter');
   const done = () => { document.body.classList.remove('splash-lock'); };
   if (!el || document.documentElement.classList.contains('no-splash')) { done(); return; }
-  // Type the name, then reveal the rest
+  
   const typed = $('.splash-typed', el), text = 'Fritzie Faura';
   if (reduceMotion) { typed.textContent = text; el.classList.add('typed'); }
   else {
@@ -63,14 +63,14 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     btn.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
     if (metaTheme) metaTheme.setAttribute('content', t === 'dark' ? '#1b0b0f' : '#f6e8de');
   };
-  // Not remembered: every time the site is opened it starts in the original light look
+  
   apply('light');
   btn.addEventListener('click', () => {
     apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   });
 })();
 
-/* Spy: only in-page (#) links, so the Download CV link is skipped */
+
 (function spy() {
   const links = $$('.drawer nav a[href^="#"]');
   const secs = links.map(a => $(a.getAttribute('href'))).filter(Boolean);
@@ -85,7 +85,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   secs.forEach(s => io.observe(s));
 })();
 
-/* Filters: each filter bar only controls the cards in its own section */
+
 (function filters() {
   $$('.filters').forEach(wrap => {
     const scope = wrap.closest('section') || document;
@@ -101,7 +101,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
 })();
 
-/* Carousel: swipe, arrows, dots, keyboard. Works with the section's filter buttons. */
+
 (function carousel() {
   const root = $('#cert-carousel');
   if (!root) return;
@@ -113,14 +113,14 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const visible = () => $$('.card', track).filter(c => !c.hidden);
 
-  // Scroll position that centers slide i (offsetLeft is relative to the track)
+  
   const leftFor = i => {
     const s = slides[i];
     const max = Math.max(0, track.scrollWidth - track.clientWidth);
     return Math.min(max, Math.max(0, s.offsetLeft - (track.clientWidth - s.offsetWidth) / 2));
   };
 
-  // Instant jump that works in every browser (no 'instant' keyword needed)
+  
   function jump(left) {
     track.style.scrollBehavior = 'auto';
     track.scrollLeft = left;
@@ -164,7 +164,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     mark();
   }
 
-  // Follow finger swipes / manual scrolling
+  // Follow finger swipes / manual scrollinng
   track.addEventListener('scroll', () => {
     if (locked) return;
     cancelAnimationFrame(raf);
@@ -190,7 +190,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let rt;
   addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => goTo(cur, false), 120); });
   addEventListener('orientationchange', () => setTimeout(() => goTo(cur, false), 250));
-  addEventListener('load', () => goTo(cur, false)); // images done loading: card sizes are final
+  addEventListener('load', () => goTo(cur, false)); 
   build();
 })();
 
@@ -324,9 +324,9 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   el('vol').value = audio.volume;
 
   let idx = 0, shuffle = false, repeat = true, seeking = false;
-  let wantPlay = true;                      // every time the link is opened, the music starts again
-  let pendingSeek = null;                   // position to restore once metadata is loaded
-  let autoPaused = false;                   // true when WE paused (tab hidden / page closing)
+  let wantPlay = true;                      
+  let pendingSeek = null;                  
+  let autoPaused = false;                   
   let failures = 0, lastSave = 0;
   // While the splash screen is showing, the music waits for the "Enter portfolio" tap.
   const splashActive = !!document.getElementById('splash') && !document.documentElement.classList.contains('no-splash');
@@ -366,7 +366,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function play() {
     const p = audio.play();
     if (p && p.catch) p.catch(err => {
-      if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) return; // quick track change / waiting for a tap
+      if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) return; 
       setNote('Couldn’t play this track. Check the file name in the music folder.');
     });
   }
@@ -387,12 +387,12 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   audio.addEventListener('play', () => { wantPlay = true; sync(true); save(); });
   audio.addEventListener('playing', () => { failures = 0; setNote(''); });
   audio.addEventListener('pause', () => {
-    if (autoPaused) autoPaused = false;          // paused by us, keep the intent to resume
-    else if (!audio.ended) wantPlay = false;     // the visitor paused it
+    if (autoPaused) autoPaused = false;          
+    else if (!audio.ended) wantPlay = false;     
     sync(false); save();
   });
   audio.addEventListener('ended', () => next(true));
-  // If a file is missing or can't be read, skip to the next track so the music keeps going.
+  
   audio.addEventListener('error', () => {
     const bad = tracks[idx].title;
     failures++;
@@ -473,13 +473,9 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
   addEventListener('pageshow', e => { if (e.persisted && started && wantPlay && audio.paused) play(); });
 
-  /* Start: a fresh start every time the site is opened (first track, from 0:00).
-     Only the volume is remembered. Hiding/showing the tab still resumes where it was. */
+  
   load(0, 0);
 
-  // Autoplay: try as soon as the page opens.
-  // Browsers block sound until the visitor interacts with the page, so if it is blocked
-  // the play button pulses and the music starts on the first tap, click or key press.
   const wake = ['pointerup', 'mouseup', 'touchend', 'click', 'keydown'];
   const hint = on => el('mini-play').classList.toggle('attention', on);
   const kick = e => {
@@ -490,7 +486,6 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const stopWaiting = () => { wake.forEach(ev => document.removeEventListener(ev, kick)); hint(false); };
   audio.addEventListener('playing', stopWaiting);
 
-  // Called by the splash screen's Enter button (a tap, so the browser allows sound)
   window.__startMusic = () => { started = true; wantPlay = true; play(); };
 
   if (started && wantPlay) {
@@ -786,7 +781,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       setDrawer(false); setColor(false);
     }
 
-    // While anything scrolls, move the spotlight instantly so it doesn't lag behind
+    
     function onScroll() {
       if (!spot) return;
       spot.classList.add('moving');
@@ -795,7 +790,6 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       track();
     }
 
-    // Scroll the drawer itself so a step inside it is fully visible (phones)
     function revealInDrawer(el) {
       if (!drawer) return;
       const dr = drawer.getBoundingClientRect(), r = el.getBoundingClientRect(), pad = 12;
@@ -809,7 +803,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!spot || i < 0) return;
         const el = q(steps[i].el); if (!el) return;
         const b = el.getBoundingClientRect(), p = 8, m = 4;
-        // keep the spotlight inside the screen, even for tall elements
+        
         const top = Math.max(b.top - p, m), bottom = Math.min(b.bottom + p, innerHeight - m);
         const left = Math.max(b.left - p, m), right = Math.min(b.right + p, innerWidth - m);
         spot.style.top = top + 'px';
@@ -828,7 +822,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       setColor(!!s.color);
 
       const el = q(s.el);
-      // skip steps whose target is missing or hidden
+    
       if (!el || !el.getClientRects().length) {
         return n < steps.length - 1 ? show(n + 1) : end();
       }
